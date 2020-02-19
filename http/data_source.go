@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"mime"
@@ -33,6 +34,11 @@ func dataSource() *schema.Resource {
 				},
 			},
 
+			"insecure": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"body": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -48,8 +54,16 @@ func dataSourceRead(d *schema.ResourceData, meta interface{}) error {
 
 	url := d.Get("url").(string)
 	headers := d.Get("request_headers").(map[string]interface{})
+	insecure := d.Get("insecure").(bool)
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
+		Proxy:           http.ProxyFromEnvironment,
+	}
+
+	client := &http.Client{
+		Transport: tr,
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
