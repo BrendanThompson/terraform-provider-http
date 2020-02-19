@@ -66,8 +66,24 @@ func TestDataSource_http404(t *testing.T) {
 		Providers: testProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      fmt.Sprintf(testDataSourceConfig_basic, testHttpMock.server.URL, 404),
-				ExpectError: regexp.MustCompile("HTTP request error. Response code: 404"),
+				Config: fmt.Sprintf(testDataSourceConfig_basic, testHttpMock.server.URL, 404),
+				Check: func(s *terraform.State) error {
+					_, ok := s.RootModule().Resources["data.http.http_test"]
+					if !ok {
+						return fmt.Errorf("missing data resource")
+					}
+
+					outputs := s.RootModule().Outputs
+
+					if outputs["body"].Value != "null" {
+						return fmt.Errorf(
+							`'body' output is %s; want 'null'`,
+							outputs["body"].Value,
+						)
+					}
+
+					return nil
+				},
 			},
 		},
 	})

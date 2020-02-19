@@ -68,7 +68,9 @@ func dataSourceRead(d *schema.ResourceData, meta interface{}) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP request error. Response code: %d", resp.StatusCode)
+		d.Set("body", "null")
+		d.SetId(time.Now().UTC().String())
+		return nil
 	}
 
 	contentType := resp.Header.Get("Content-Type")
